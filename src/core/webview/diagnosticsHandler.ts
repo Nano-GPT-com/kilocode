@@ -5,6 +5,7 @@ import * as vscode from "vscode"
 
 import { getTaskDirectoryPath } from "../../utils/storage"
 import { fileExistsAtPath } from "../../utils/fs"
+import { detectToolProtocolFromHistory } from "../../utils/resolveToolProtocol" // kilocode_change
 
 export interface ErrorDiagnosticsValues {
 	timestamp?: string
@@ -52,6 +53,35 @@ export async function generateErrorDiagnostics(params: GenerateDiagnosticsParams
 			}
 		}
 
+		// kilocode_change start
+		const historyMessages = Array.isArray(history) ? (history as any[]) : []
+		let toolUseCount = 0
+		let toolUseWithIdCount = 0
+
+		for (const message of historyMessages) {
+			const content = message?.content
+			if (!Array.isArray(content)) {
+				continue
+			}
+			for (const block of content) {
+				if (block?.type !== "tool_use") {
+					continue
+				}
+				toolUseCount++
+				if (typeof block?.id === "string" && block.id.length > 0) {
+					toolUseWithIdCount++
+				}
+			}
+		}
+
+		let detectedToolProtocol: string | undefined
+		try {
+			detectedToolProtocol = detectToolProtocolFromHistory(historyMessages as any)
+		} catch {
+			// ignore detection failures and still generate diagnostics file
+		}
+		// kilocode_change end
+
 		const diagnostics = {
 			error: {
 				timestamp: values?.timestamp ?? new Date().toISOString(),
@@ -60,6 +90,13 @@ export async function generateErrorDiagnostics(params: GenerateDiagnosticsParams
 				model: values?.model ?? "",
 				details: values?.details ?? "",
 			},
+			// kilocode_change start
+			analysis: {
+				detectedToolProtocol,
+				toolUseCount,
+				toolUseWithIdCount,
+			},
+			// kilocode_change end
 			history,
 		}
 
