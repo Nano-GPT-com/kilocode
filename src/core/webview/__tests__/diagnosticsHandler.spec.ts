@@ -88,6 +88,9 @@ describe("generateErrorDiagnostics", () => {
 			"// Please share this file with Kilo Code Support (support@kilo.ai) to diagnose the issue faster",
 		)
 		expect(String(writtenContent)).toContain('"error":')
+		expect(String(writtenContent)).toContain('"analysis":')
+		expect(String(writtenContent)).toContain('"toolUseCount": 0')
+		expect(String(writtenContent)).toContain('"toolUseWithIdCount": 0')
 		expect(String(writtenContent)).toContain('"history":')
 		expect(String(writtenContent)).toContain('"version": "1.2.3"')
 		expect(String(writtenContent)).toContain('"provider": "test-provider"')
