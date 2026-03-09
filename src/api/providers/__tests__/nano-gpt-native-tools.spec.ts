@@ -79,6 +79,103 @@ describe("NanoGptHandler native tools", () => {
 		)
 	})
 
+	it("defaults tool_choice to required for native tools when not explicitly provided", async () => {
+		const mockCreate = vi.fn().mockImplementation(() => ({
+			[Symbol.asyncIterator]: async function* () {
+				yield {
+					choices: [{ delta: { content: "Test response" } }],
+				}
+			},
+		}))
+
+		const handler = new NanoGptHandler({
+			nanoGptApiKey: "test-key",
+			nanoGptModelId: nanoGptDefaultModelId,
+		} as ApiHandlerOptions)
+
+		vi.spyOn(handler, "fetchModel").mockResolvedValue(createMockModelResult())
+
+		const mockClient = {
+			chat: {
+				completions: {
+					create: mockCreate,
+				},
+			},
+		} as unknown as OpenAI
+		;(handler as unknown as { client: OpenAI }).client = mockClient
+
+		const stream = handler.createMessage("system", [], {
+			taskId: "test-task-id",
+			tools: [
+				{
+					type: "function",
+					function: {
+						name: "test_tool",
+						description: "test",
+						parameters: { type: "object", properties: {} },
+					},
+				},
+			],
+			toolProtocol: "native" as const,
+		})
+		await stream.next()
+
+		expect(mockCreate).toHaveBeenCalledWith(
+			expect.objectContaining({
+				tool_choice: "required",
+			}),
+		)
+	})
+
+	it("coerces tool_choice auto to required for native tools", async () => {
+		const mockCreate = vi.fn().mockImplementation(() => ({
+			[Symbol.asyncIterator]: async function* () {
+				yield {
+					choices: [{ delta: { content: "Test response" } }],
+				}
+			},
+		}))
+
+		const handler = new NanoGptHandler({
+			nanoGptApiKey: "test-key",
+			nanoGptModelId: nanoGptDefaultModelId,
+		} as ApiHandlerOptions)
+
+		vi.spyOn(handler, "fetchModel").mockResolvedValue(createMockModelResult())
+
+		const mockClient = {
+			chat: {
+				completions: {
+					create: mockCreate,
+				},
+			},
+		} as unknown as OpenAI
+		;(handler as unknown as { client: OpenAI }).client = mockClient
+
+		const stream = handler.createMessage("system", [], {
+			taskId: "test-task-id",
+			tools: [
+				{
+					type: "function",
+					function: {
+						name: "test_tool",
+						description: "test",
+						parameters: { type: "object", properties: {} },
+					},
+				},
+			],
+			tool_choice: "auto",
+			toolProtocol: "native" as const,
+		})
+		await stream.next()
+
+		expect(mockCreate).toHaveBeenCalledWith(
+			expect.objectContaining({
+				tool_choice: "required",
+			}),
+		)
+	})
+
 	it("includes parallel_tool_calls: false when toolProtocol is native", async () => {
 		const mockCreate = vi.fn().mockImplementation(() => ({
 			[Symbol.asyncIterator]: async function* () {
