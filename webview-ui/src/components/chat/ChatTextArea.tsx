@@ -414,6 +414,9 @@ export const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 		const contextMenuContainerRef = useRef<HTMLDivElement>(null)
 		const [isEnhancingPrompt, setIsEnhancingPrompt] = useState(false)
 		const [isFocused, setIsFocused] = useState(false)
+		// kilocode_change start
+		const isDebugMode = import.meta.env?.DEV === true
+		// kilocode_change end
 		// kilocode_change start: FIM autocomplete ghost text
 		const {
 			ghostText,
@@ -1596,7 +1599,9 @@ export const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 					style={{
 						border: isRecording
 							? "1px solid var(--vscode-editorError-foreground)"
-							: "1px solid transparent",
+							: isDebugMode
+								? "2px solid #22c55e"
+								: "1px solid transparent",
 					}}
 					// kilocode_change end - isRecording active
 					className={cn(

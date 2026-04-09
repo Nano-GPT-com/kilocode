@@ -49,6 +49,22 @@ export class NanoGptHandler extends BaseProvider implements SingleCompletionHand
 			...convertToOpenAiMessages(messages),
 		]
 
+		const defaultToolChoice =
+			metadata?.toolProtocol === "native" &&
+			metadata?.tools &&
+			metadata.tools.length > 0 &&
+			metadata.tool_choice === undefined
+				? ("required" as const)
+				: undefined
+
+		const normalizedToolChoice =
+			metadata?.toolProtocol === "native" &&
+			metadata?.tools &&
+			metadata.tools.length > 0 &&
+			metadata.tool_choice === "auto"
+				? ("required" as const)
+				: metadata?.tool_choice
+
 		const completionParams: OpenAI.Chat.ChatCompletionCreateParams = {
 			model: modelId,
 			...(maxTokens && maxTokens > 0 && { max_tokens: maxTokens }),
@@ -57,7 +73,9 @@ export class NanoGptHandler extends BaseProvider implements SingleCompletionHand
 			stream: true,
 			stream_options: { include_usage: true },
 			...(metadata?.tools && { tools: this.convertToolsForOpenAI(metadata.tools) }),
-			...(metadata?.tool_choice && { tool_choice: metadata.tool_choice }),
+			...((normalizedToolChoice ?? defaultToolChoice) && {
+				tool_choice: normalizedToolChoice ?? defaultToolChoice,
+			}),
 			...(metadata?.toolProtocol === "native" && {
 				parallel_tool_calls: metadata.parallelToolCalls ?? false,
 			}),
